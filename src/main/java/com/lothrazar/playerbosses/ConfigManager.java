@@ -16,6 +16,10 @@ public class ConfigManager {
     EntityPlayerBoss.health = config.getInt("health", category, 100, 0, 99999, "Health value");
     EntityPlayerBoss.speed = config.getFloat("speed", category, 0.5F, 0, 2.0F, "Movement speed value");
     EntityPlayerBoss.damage = config.getInt("damage", category, 5, 0, 999, "Attack damage without weapons");
+    EntityPlayerBoss.mainHand = config.getString("MainHand",
+        category, "minecraft:iron_sword", "Main hand holding");
+    EntityPlayerBoss.offHand = config.getString("OffHand",
+        category, "minecraft:shield", "Off hand holding");
     if (config.hasChanged()) {
       config.save();
     }

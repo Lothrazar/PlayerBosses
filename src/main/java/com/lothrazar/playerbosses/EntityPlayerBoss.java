@@ -18,9 +18,9 @@ import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityGiantZombie;
 import net.minecraft.entity.monster.EntityPigZombie;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Items;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
@@ -36,22 +36,35 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   public static double health;
   public static double speed;
   public static double damage;
+  public static String mainHand = "";
+  public static String offHand = "";
 
   public EntityPlayerBoss(World worldIn) {
     super(worldIn);
+    // TODO name ocnfig
+    net.minecraft.entity.boss.EntityWither x;
+  }
+
+  @Override
+  public boolean isNonBoss() {
+    return false;
   }
 
   @Override
   protected ResourceLocation getLootTable() {
-    return new ResourceLocation(ModBosses.MODID, "player_boss");
+    return new ResourceLocation(ModBosses.MODID, "entity/player_boss");
   }
 
   @Override
   public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData livingdata) {
     IEntityLivingData res = super.onInitialSpawn(difficulty, livingdata);
     this.setLeftHanded(false);
-    this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
-    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+    if (!mainHand.isEmpty()) {
+      this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Item.getByNameOrId(mainHand)));
+    }
+    if (!offHand.isEmpty()) {
+      this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Item.getByNameOrId(offHand)));
+    }
     return res;
   }
   /////////////// data properties 
@@ -59,7 +72,6 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   @Override
   protected void applyEntityAttributes() {
     super.applyEntityAttributes();
-
     this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(health);
     this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(speed);
     this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(damage);
@@ -99,7 +111,7 @@ public class EntityPlayerBoss extends EntityGiantZombie {
 
   @Override
   protected SoundEvent getDeathSound() {
-    return SoundEvents.ENTITY_ZOMBIE_DEATH;
+    return SoundEvents.ENTITY_WITHER_DEATH;
   }
 
   protected SoundEvent getStepSound() {
