@@ -7,7 +7,8 @@ import net.minecraft.util.ResourceLocation;
 
 public class RenderPlayerBoss extends RenderGiantZombie {
 
-  private static final ResourceLocation ZOMBIE_TEXTURES = new ResourceLocation("textures/entity/zombie/zombie.png");
+  private static final ResourceLocation ZOMBIE_TEXTURES = new ResourceLocation(ModBosses.MODID,
+      "textures/entity/skin.png");
 
   public RenderPlayerBoss(RenderManager rm) {
     super(rm, 6.0F);//same as vanilla giant zombie size, MAYBE config
