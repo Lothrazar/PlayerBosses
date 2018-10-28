@@ -12,6 +12,7 @@ public class RenderPlayerBoss extends RenderGiantZombie {
 
   public RenderPlayerBoss(RenderManager rm) {
     super(rm, 6.0F);//same as vanilla giant zombie size, MAYBE config
+
   }
 
   @Override

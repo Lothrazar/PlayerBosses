@@ -18,6 +18,7 @@ import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityGiantZombie;
 import net.minecraft.entity.monster.EntityPigZombie;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
@@ -26,6 +27,8 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.BossInfo;
+import net.minecraft.world.BossInfoServer;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.client.registry.IRenderFactory;
@@ -36,20 +39,52 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   public static double health;
   public static double speed;
   public static double damage;
+  public static boolean immuneFire;
+  public static int expDropped;
+  public static String bossName;
   public static String mainHand = "";
   public static String offHand = "";
+  private final BossInfoServer bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
 
   public EntityPlayerBoss(World worldIn) {
     super(worldIn);
-    // TODO name ocnfig
+    // bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
     net.minecraft.entity.boss.EntityWither x;
+    this.isImmuneToFire = immuneFire;
+    this.experienceValue = expDropped;// config
+    //    ((PathNavigateGround)this.getNavigator()).setCanSwim(true);
   }
 
+  ////////////////// Boss info and boss bar
   @Override
   public boolean isNonBoss() {
     return false;
   }
 
+  @Override
+  public String getName() {
+    return bossName;
+  }
+
+  @Override
+  public void addTrackingPlayer(EntityPlayerMP player) {
+    super.addTrackingPlayer(player);
+    this.bossInfo.addPlayer(player);
+  }
+
+  @Override
+  public void removeTrackingPlayer(EntityPlayerMP player) {
+    super.removeTrackingPlayer(player);
+    this.bossInfo.removePlayer(player);
+  }
+
+  @Override
+  public void updateAITasks() {
+    super.updateAITasks();
+    this.bossInfo.setPercent(this.getHealth() / this.getMaxHealth());
+  }
+
+  /////////////// data properties // some from config 
   @Override
   protected ResourceLocation getLootTable() {
     return new ResourceLocation(ModBosses.MODID, "entity/player_boss");
@@ -67,11 +102,11 @@ public class EntityPlayerBoss extends EntityGiantZombie {
     }
     return res;
   }
-  /////////////// data properties 
 
   @Override
   protected void applyEntityAttributes() {
     super.applyEntityAttributes();
+    System.out.println("HHHHHHHH " + health);
     this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(health);
     this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(speed);
     this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(damage);

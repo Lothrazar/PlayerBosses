@@ -12,6 +12,11 @@ public class ConfigManager {
 
   private static void load() {
     String category = ModBosses.MODID;
+    EntityPlayerBoss.bossName = config.getString("name",
+        category, "Sevadus", "Name in boss bar");
+    EntityPlayerBoss.expDropped = config.getInt("expDropped", category, 500, 0, 99999, "Exp when killed");
+    EntityPlayerBoss.immuneFire = config.getBoolean("immune to fire", category, true, "is immune to fire");
+    EntityPlayerBoss.armor = config.getInt("armor", category, 2, 0, 20, "Armor default when not equipped");
     EntityPlayerBoss.armor = config.getInt("armor", category, 2, 0, 20, "Armor default when not equipped");
     EntityPlayerBoss.health = config.getInt("health", category, 100, 0, 99999, "Health value");
     EntityPlayerBoss.speed = config.getFloat("speed", category, 0.5F, 0, 2.0F, "Movement speed value");
