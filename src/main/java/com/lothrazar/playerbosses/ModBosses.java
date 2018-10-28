@@ -27,7 +27,9 @@ public class ModBosses {
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
     logger = event.getModLog();
+    ConfigManager.init(event.getSuggestedConfigurationFile());
     MinecraftForge.EVENT_BUS.register(this);
+    MinecraftForge.EVENT_BUS.register(new ConfigManager());
     int id = 0;
     String name = "player_boss";
     EntityRegistry.registerModEntity(new ResourceLocation(MODID, name),
