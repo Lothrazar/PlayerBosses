@@ -7,11 +7,15 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class ConfigManager {
 
-  public static Configuration config;
   public static boolean renderDebugHitboxes;
 
+  public static Configuration config;
+
   private static void load() {
+    // CHAT SENDING  
+    // on  certain damage levels. make sure only once. 
     String category = ModBosses.MODID;
+    renderDebugHitboxes = config.getBoolean("debugHitboxes", category, false, "Show hitboxes for testing");
     EntityPlayerBoss.bossName = config.getString("name",
         category, "Sevadus", "Name in boss bar");
     EntityPlayerBoss.expDropped = config.getInt("expDropped", category, 500, 0, 99999, "Exp when killed");

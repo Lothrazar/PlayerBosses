@@ -16,6 +16,13 @@ public class RenderPlayerBoss extends RenderGiantZombie {
   }
 
   @Override
+  public void doRender(EntityGiantZombie entity, double x, double y, double z, float entityYaw, float partialTicks) {
+    super.doRender(entity, x, y, z, entityYaw, partialTicks);
+    if (ConfigManager.renderDebugHitboxes)
+      RenderUtil.renderEntityBoundingBox(entity, x, y, z);
+  }
+
+  @Override
   protected ResourceLocation getEntityTexture(EntityGiantZombie entity) {
     return ZOMBIE_TEXTURES;
   }
