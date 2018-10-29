@@ -106,7 +106,7 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   @Override
   protected void applyEntityAttributes() {
     super.applyEntityAttributes();
-    System.out.println("HHHHHHHH " + health);
+
     this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(health);
     this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(speed);
     this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(damage);

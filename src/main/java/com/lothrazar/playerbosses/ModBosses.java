@@ -34,12 +34,14 @@ public class ModBosses {
     String name = "player_boss";
     EntityRegistry.registerModEntity(new ResourceLocation(MODID, name),
         EntityPlayerBoss.class, name, id++, instance, 64, 1, true);
+    //    ResourceLocation skin = null;  
   }
 
   @EventHandler
   public void init(FMLInitializationEvent event) {
     // some example code
     logger.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
+
   }
 
   @SideOnly(Side.CLIENT)
