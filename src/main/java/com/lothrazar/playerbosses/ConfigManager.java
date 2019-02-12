@@ -17,7 +17,7 @@ public class ConfigManager {
     String category = ModBosses.MODID;
     renderDebugHitboxes = config.getBoolean("debugHitboxes", category, false, "Show hitboxes for testing");
     EntityPlayerBoss.bossName = config.getString("name",
-        category, "Sevadus", "Name in boss bar");
+        category, "Severed", "Name in boss bar");
     EntityPlayerBoss.expDropped = config.getInt("expDropped", category, 500, 0, 99999, "Exp when killed");
     EntityPlayerBoss.immuneFire = config.getBoolean("immune to fire", category, true, "is immune to fire");
     EntityPlayerBoss.armor = config.getInt("armor", category, 2, 0, 20, "Armor default when not equipped");
