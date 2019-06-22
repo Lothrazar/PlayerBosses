@@ -3,7 +3,6 @@ package com.lothrazar.playerbosses;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.Logger;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
@@ -13,21 +12,21 @@ import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLFingerprintViolationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.EntityRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-@Mod(modid = ModBosses.MODID)
+@Mod(modid = ModBosses.MODID, certificateFingerprint = "@FINGERPRINT@")
 public class ModBosses {
 
   public static final String MODID = "playerbosses";
   private static Logger logger;
   @Instance(MODID)
   public static ModBosses instance;
-  private List<SoundEvent> sounds = new ArrayList<SoundEvent>();
+  private List<SoundEvent> sounds = new ArrayList<>();
 
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
@@ -58,17 +57,23 @@ public class ModBosses {
     event.getRegistry().registerAll(this.sounds.toArray(new SoundEvent[0]));
   }
 
-  @EventHandler
-  public void init(FMLInitializationEvent event) {
-    // some example code
-    logger.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
-
-  }
-
   @SideOnly(Side.CLIENT)
   @SubscribeEvent
   public void registerRendering(ModelRegistryEvent event) {
-    // 
+
     RenderingRegistry.registerEntityRenderingHandler(EntityPlayerBoss.class, new EntityPlayerBoss.Factory());
+  }
+
+  @EventHandler
+  public void onFingerprintViolation(FMLFingerprintViolationEvent event) {
+    // https://tutorials.darkhax.net/tutorials/jar_signing/
+    String source = (event.getSource() == null) ? "" : event.getSource().getName() + " ";
+    String msg = MODID + ": Invalid fingerprint detected! The file " + source + "may have been tampered with. This version will NOT be supported by the author!";
+    if (logger == null) {
+      System.out.println(msg);
+    }
+    else {
+      logger.error(msg);
+    }
   }
 }
