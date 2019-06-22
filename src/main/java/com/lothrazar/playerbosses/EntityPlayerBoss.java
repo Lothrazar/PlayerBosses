@@ -51,11 +51,17 @@ public class EntityPlayerBoss extends EntityGiantZombie {
 
   public EntityPlayerBoss(World worldIn) {
     super(worldIn);
+
     // bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
     net.minecraft.entity.boss.EntityWither x;
     this.isImmuneToFire = immuneFire;
     this.experienceValue = expDropped;// config
     //    ((PathNavigateGround)this.getNavigator()).setCanSwim(true);
+  }
+
+  @Override
+  protected boolean canDespawn() {
+    return ConfigManager.canDespawn;
   }
 
   ////////////////// Boss info and boss bar

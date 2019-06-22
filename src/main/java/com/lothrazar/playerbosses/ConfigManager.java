@@ -11,11 +11,14 @@ public class ConfigManager {
 
   public static Configuration config;
 
+  public static boolean canDespawn;
+
   private static void load() {
     // CHAT SENDING  
     // on  certain damage levels. make sure only once. 
     String category = ModBosses.MODID;
     renderDebugHitboxes = config.getBoolean("debugHitboxes", category, false, "Show hitboxes for testing");
+    canDespawn = config.getBoolean("canDespawnNaturally", category, false, "Natural Despawning");
     EntityPlayerBoss.bossName = config.getString("name",
         category, "Severed", "Name in boss bar");
     EntityPlayerBoss.expDropped = config.getInt("expDropped", category, 500, 0, 99999, "Exp when killed");
