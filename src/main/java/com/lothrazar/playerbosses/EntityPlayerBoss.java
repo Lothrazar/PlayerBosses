@@ -44,6 +44,9 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   public static String bossName;
   public static String mainHand = "";
   public static String offHand = "";
+  public static SoundEvent SOUND_HURT;
+  public static SoundEvent SOUND_AMB;
+  public static SoundEvent SOUND_DEATH;
   private final BossInfoServer bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
 
   public EntityPlayerBoss(World worldIn) {
@@ -136,17 +139,17 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   ///////////////// sounds 
   @Override
   protected SoundEvent getAmbientSound() {
-    return SoundEvents.ENTITY_ZOMBIE_AMBIENT;
+    return SOUND_AMB;
   }
 
   @Override
   protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
-    return SoundEvents.ENTITY_ZOMBIE_HURT;
+    return SOUND_HURT;
   }
 
   @Override
   protected SoundEvent getDeathSound() {
-    return SoundEvents.ENTITY_WITHER_DEATH;
+    return SOUND_DEATH;
   }
 
   protected SoundEvent getStepSound() {

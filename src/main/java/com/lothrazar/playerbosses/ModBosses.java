@@ -1,10 +1,14 @@
 package com.lothrazar.playerbosses;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.Logger;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
@@ -23,6 +27,7 @@ public class ModBosses {
   private static Logger logger;
   @Instance(MODID)
   public static ModBosses instance;
+  private List<SoundEvent> sounds = new ArrayList<SoundEvent>();
 
   @EventHandler
   public void preInit(FMLPreInitializationEvent event) {
@@ -34,7 +39,23 @@ public class ModBosses {
     String name = "player_boss";
     EntityRegistry.registerModEntity(new ResourceLocation(MODID, name),
         EntityPlayerBoss.class, name, id++, instance, 64, 1, true);
-    //    ResourceLocation skin = null;  
+
+    EntityPlayerBoss.SOUND_HURT = registerSound("boss.hurt");
+    EntityPlayerBoss.SOUND_AMB = registerSound("boss.ambient");
+    EntityPlayerBoss.SOUND_DEATH = registerSound("boss.death");
+  }
+
+  public SoundEvent registerSound(String name) {
+    final ResourceLocation res = new ResourceLocation(MODID, name);//new ResourceLocation(Const.MODID, "sounds/" + UtilSound.Own.crackle+".ogg");
+    SoundEvent sound = new SoundEvent(res);
+    sound.setRegistryName(res);
+    sounds.add(sound);
+    return sound;
+  }
+
+  @SubscribeEvent
+  public void onRegisterSoundEvent(RegistryEvent.Register<SoundEvent> event) {
+    event.getRegistry().registerAll(this.sounds.toArray(new SoundEvent[0]));
   }
 
   @EventHandler
