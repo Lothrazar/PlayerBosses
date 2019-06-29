@@ -38,7 +38,6 @@ public class ModBosses {
     String name = "player_boss";
     EntityRegistry.registerModEntity(new ResourceLocation(MODID, name),
         EntityPlayerBoss.class, name, id++, instance, 64, 1, true);
-
     EntityPlayerBoss.SOUND_HURT = registerSound("boss.hurt");
     EntityPlayerBoss.SOUND_AMB = registerSound("boss.ambient");
     EntityPlayerBoss.SOUND_DEATH = registerSound("boss.death");
@@ -60,7 +59,6 @@ public class ModBosses {
   @SideOnly(Side.CLIENT)
   @SubscribeEvent
   public void registerRendering(ModelRegistryEvent event) {
-
     RenderingRegistry.registerEntityRenderingHandler(EntityPlayerBoss.class, new EntityPlayerBoss.Factory());
   }
 

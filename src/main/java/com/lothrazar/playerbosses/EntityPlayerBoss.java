@@ -46,7 +46,6 @@ import net.minecraftforge.fml.client.registry.IRenderFactory;
 public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttackMob {
 
   private static final DataParameter<Boolean> ATTACKINGFIRE = EntityDataManager.<Boolean> createKey(EntityGiantZombie.class, DataSerializers.BOOLEAN);
-
   public static double armor;
   public static double health;
   public static double speed;
@@ -102,15 +101,13 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   public void addTrackingPlayer(EntityPlayerMP player) {
     super.addTrackingPlayer(player);
     this.bossInfo.addPlayer(player);
-
   }
 
   @Override
   public boolean isHandActive() {
-
-
     return this.attackType == EnumAttackType.RANGED;
   }
+
   @Override
   public void removeTrackingPlayer(EntityPlayerMP player) {
     super.removeTrackingPlayer(player);
@@ -137,14 +134,12 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData livingdata) {
     IEntityLivingData res = super.onInitialSpawn(difficulty, livingdata);
     this.setLeftHanded(false);
-
     return res;
   }
 
   @Override
   protected void applyEntityAttributes() {
     super.applyEntityAttributes();
-
     this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(health);
     this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(speed);
     this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(damage);
@@ -155,6 +150,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   private EntityAINearestAttackableTarget melee;
   private AIFireballAttackGeneric fireball;
   private EntityAIAttackRangedBow bow;
+  private EntityAIAvoidEntity runaway;
 
   public AIFireballAttackGeneric getAiFire() {
     if (fireball == null) {
@@ -162,6 +158,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     }
     return fireball;
   }
+
   public EntityAINearestAttackableTarget getAiMelee() {
     if (melee == null) {
       //      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
@@ -171,12 +168,12 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   }
 
   public EntityAIAttackRangedBow getAiBow() {
-    if (bow == null) { 
-
+    if (bow == null) {
       bow = new EntityAIAttackRangedBow<EntityPlayerBoss>(this, 1.0D, 20, 15.0F);
     }
     return bow;
   }
+
   @Override
   protected void initEntityAI() {
     super.initEntityAI();
@@ -188,7 +185,6 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     this.tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
     this.tasks.addTask(8, new EntityAILookIdle(this));
     //   this.tasks.addTask(6, new EntityAIMoveThroughVillage(this, 1.0D, false));
-
     this.attackType = EnumAttackType.RANGED;
     this.setCombatTask();
   }
@@ -225,6 +221,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     int at = root.getInteger("attackType");
     this.attackType = EnumAttackType.values()[at];
   }
+
   @Override
   public void onLivingUpdate() {
     super.onLivingUpdate();
@@ -241,45 +238,58 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     setCombatTask();
   }
 
-
   public void setCombatTask() {
-
-    tasks.removeTask(getAiMelee());
-    tasks.removeTask(getAiFire());
-    tasks.removeTask(getAiBow());
-
-    this.targetTasks.addTask(2, getAiMelee());
     switch (this.attackType) {
-      case FIRE:
-        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
-        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        tasks.addTask(4, this.getAiFire());
+      case RANGED:
+        setRangedWeapons();
+        //        if (runaway == null) {
+        //          System.out.println("ADD RUNAWAY ");
+        //          runaway = new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D);
+        //          this.tasks.addTask(3, runaway);
+        //        }
+        tasks.addTask(4, this.getAiBow());
       break;
       case MELEE:
-        try {
-          if (!mainHand.isEmpty()) {
-            this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Item.getByNameOrId(mainHand)));
-          }
-          if (!offHand.isEmpty()) {
-            this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Item.getByNameOrId(offHand)));
-          }
+        tasks.removeTask(getAiBow());
+        if (this.melee == null) {
+          setMeleeWeapons();
+          tasks.addTask(4, this.getAiMelee());
+          this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
         }
-        catch (Exception e) {
-          //probably invalid item config 
-          e.printStackTrace();
-        }
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
-        tasks.addTask(4, this.getAiMelee());
-      //tasks.addTask(2, new EntityAIAttackMelee(this, 1.0D, false));
       break;
-      case RANGED:
-        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+      case FIRE:
+        tasks.removeTask(getAiMelee());
+        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
         this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        this.tasks.addTask(3, new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D));
-        tasks.addTask(4, this.getAiBow());
+        //        if (runaway == null) { 
+        //          System.out.println("ADD RUNAWAY ");
+        //          runaway = new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D);
+        //          this.tasks.addTask(3, runaway);
+        //        }
+        tasks.addTask(4, this.getAiFire());
       break;
       default:
       break;
+    }
+  }
+
+  private void setRangedWeapons() {
+    this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+  }
+
+  private void setMeleeWeapons() {
+    try {
+      if (!mainHand.isEmpty()) {
+        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Item.getByNameOrId(mainHand)));
+      }
+      if (!offHand.isEmpty()) {
+        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Item.getByNameOrId(offHand)));
+      }
+    }
+    catch (Exception e) {
+      //probably invalid item config 
+      e.printStackTrace();
     }
   }
 
@@ -303,7 +313,6 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   @Override
   public void attackEntityWithRangedAttack(EntityLivingBase target, float distanceFactor) {
-
     EntityArrow entityarrow = this.getArrow(distanceFactor);
     double d0 = target.posX - this.posX;
     double d1 = target.getEntityBoundingBox().minY + target.height / 3.0F - entityarrow.posY;
@@ -318,9 +327,9 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     EntityTippedArrow entitytippedarrow = new EntityTippedArrow(this.world, this);
     entitytippedarrow.setEnchantmentEffectsFromEntity(this, p);
     if (ConfigManager.arrowPotions) {
-    entitytippedarrow.addEffect(new PotionEffect(MobEffects.POISON, 60, 1));
-    entitytippedarrow.addEffect(new PotionEffect(MobEffects.UNLUCK, 60, 1));
-    entitytippedarrow.addEffect(new PotionEffect(MobEffects.MINING_FATIGUE, 60, 1));
+      entitytippedarrow.addEffect(new PotionEffect(MobEffects.POISON, 60, 1));
+      entitytippedarrow.addEffect(new PotionEffect(MobEffects.UNLUCK, 60, 1));
+      entitytippedarrow.addEffect(new PotionEffect(MobEffects.MINING_FATIGUE, 60, 1));
     }
     return entitytippedarrow;
   }
@@ -332,6 +341,8 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   @Override
   public int getItemInUseMaxCount() {
-    return 20;//20 or more if shoot
+    if (this.world.rand.nextDouble() < 0.2F)
+      return 20;//20 or more if shoot
+    return 0;
   }
 }

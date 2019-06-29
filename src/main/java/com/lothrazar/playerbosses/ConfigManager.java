@@ -8,17 +8,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class ConfigManager {
 
   public static boolean renderDebugHitboxes;
-
   public static Configuration config;
-
   public static boolean canDespawn;
-
   public static double fireballChance;
-
   public static double healthSwitchFire;
-
   public static double healthMelee;
-
   public static boolean arrowPotions;
 
   private static void load() {
