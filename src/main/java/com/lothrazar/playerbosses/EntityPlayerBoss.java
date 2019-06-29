@@ -8,23 +8,21 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.IRangedAttackMob;
 import net.minecraft.entity.SharedMonsterAttributes;
-import net.minecraft.entity.ai.EntityAIAttackMelee;
 import net.minecraft.entity.ai.EntityAIAttackRangedBow;
 import net.minecraft.entity.ai.EntityAIAvoidEntity;
+import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
-import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
-import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
 import net.minecraft.entity.ai.EntityAISwimming;
 import net.minecraft.entity.ai.EntityAIWanderAvoidWater;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityGiantZombie;
-import net.minecraft.entity.monster.EntityPigZombie;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.projectile.EntityTippedArrow;
 import net.minecraft.init.Items;
+import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
@@ -33,6 +31,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
@@ -108,7 +107,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   @Override
   public boolean isHandActive() {
-    boolean yes = super.isHandActive();
+
 
     return this.attackType == EnumAttackType.RANGED;
   }
@@ -138,12 +137,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   public IEntityLivingData onInitialSpawn(DifficultyInstance difficulty, @Nullable IEntityLivingData livingdata) {
     IEntityLivingData res = super.onInitialSpawn(difficulty, livingdata);
     this.setLeftHanded(false);
-    if (!mainHand.isEmpty()) {
-      this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Item.getByNameOrId(mainHand)));
-    }
-    if (!offHand.isEmpty()) {
-      this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Item.getByNameOrId(offHand)));
-    }
+
     return res;
   }
 
@@ -171,14 +165,13 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   public EntityAINearestAttackableTarget getAiMelee() {
     if (melee == null) {
       //      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
-      melee = new EntityAINearestAttackableTarget(this, EntityPigZombie.class, true);
+      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
     }
     return melee;
   }
 
   public EntityAIAttackRangedBow getAiBow() {
     if (bow == null) { 
-      System.out.println("create EntityAIAttackRangedBow");
 
       bow = new EntityAIAttackRangedBow<EntityPlayerBoss>(this, 1.0D, 20, 15.0F);
     }
@@ -188,12 +181,13 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   protected void initEntityAI() {
     super.initEntityAI();
     this.tasks.addTask(0, new EntityAISwimming(this));
-    this.tasks.addTask(2, new EntityAIAttackMelee(this, 1.0D, false));
-    this.tasks.addTask(5, new EntityAIMoveTowardsRestriction(this, 1.0D));
+    // 
+    this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, new Class[] {}));
+    //  this.tasks.addTask(5, new EntityAIMoveTowardsRestriction(this, 1.0D));
     this.tasks.addTask(7, new EntityAIWanderAvoidWater(this, 1.0D));
     this.tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
     this.tasks.addTask(8, new EntityAILookIdle(this));
-    this.tasks.addTask(6, new EntityAIMoveThroughVillage(this, 1.0D, false));
+    //   this.tasks.addTask(6, new EntityAIMoveThroughVillage(this, 1.0D, false));
 
     this.attackType = EnumAttackType.RANGED;
     this.setCombatTask();
@@ -234,10 +228,10 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   @Override
   public void onLivingUpdate() {
     super.onLivingUpdate();
-    if (getHealthPercent() < ConfigManager.healthSwitchFire) {
+    if (getHealthPercent() < ConfigManager.healthSwitchFire && ConfigManager.healthSwitchFire > 0) {
       this.attackType = EnumAttackType.FIRE;
     }
-    else if (getHealthPercent() < ConfigManager.healthMelee) {
+    else if (getHealthPercent() < ConfigManager.healthMelee && ConfigManager.healthMelee > 0) {
       this.attackType = EnumAttackType.MELEE;
     }
     else {//from 100% down
@@ -247,13 +241,6 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     setCombatTask();
   }
 
-  @Override
-  @Nullable
-  public EntityLivingBase getAttackTarget() {
-    //    System.out.println("attack target? " + super.getAttackTarget());
-    return super.getAttackTarget();
-
-  }
 
   public void setCombatTask() {
 
@@ -269,14 +256,26 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
         tasks.addTask(4, this.getAiFire());
       break;
       case MELEE:
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPigZombie.class, true));
+        try {
+          if (!mainHand.isEmpty()) {
+            this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Item.getByNameOrId(mainHand)));
+          }
+          if (!offHand.isEmpty()) {
+            this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Item.getByNameOrId(offHand)));
+          }
+        }
+        catch (Exception e) {
+          //probably invalid item config 
+          e.printStackTrace();
+        }
+        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
         tasks.addTask(4, this.getAiMelee());
+      //tasks.addTask(2, new EntityAIAttackMelee(this, 1.0D, false));
       break;
       case RANGED:
-        //        this.setAttackTarget(null); 
         this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
         this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        this.tasks.addTask(3, new EntityAIAvoidEntity(this, EntityPigZombie.class, 12.0F, 1.0D, 1.2D));
+        this.tasks.addTask(3, new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D));
         tasks.addTask(4, this.getAiBow());
       break;
       default:
@@ -304,7 +303,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   @Override
   public void attackEntityWithRangedAttack(EntityLivingBase target, float distanceFactor) {
-    System.out.println("ranged attack?");
+
     EntityArrow entityarrow = this.getArrow(distanceFactor);
     double d0 = target.posX - this.posX;
     double d1 = target.getEntityBoundingBox().minY + target.height / 3.0F - entityarrow.posY;
@@ -318,7 +317,11 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   private EntityArrow getArrow(float p) {
     EntityTippedArrow entitytippedarrow = new EntityTippedArrow(this.world, this);
     entitytippedarrow.setEnchantmentEffectsFromEntity(this, p);
-    System.out.println("get arrow?  attack? + " + entitytippedarrow);
+    if (ConfigManager.arrowPotions) {
+    entitytippedarrow.addEffect(new PotionEffect(MobEffects.POISON, 60, 1));
+    entitytippedarrow.addEffect(new PotionEffect(MobEffects.UNLUCK, 60, 1));
+    entitytippedarrow.addEffect(new PotionEffect(MobEffects.MINING_FATIGUE, 60, 1));
+    }
     return entitytippedarrow;
   }
 

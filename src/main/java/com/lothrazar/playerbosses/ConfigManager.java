@@ -13,16 +13,20 @@ public class ConfigManager {
 
   public static boolean canDespawn;
 
-  public static double fireballChance = 0.2;
+  public static double fireballChance;
 
-  public static double healthSwitchFire = 0.1;
+  public static double healthSwitchFire;
 
-  public static double healthMelee = 0.4;
+  public static double healthMelee;
+
+  public static boolean arrowPotions;
 
   private static void load() {
     // CHAT SENDING  
     // on  certain damage levels. make sure only once. 
     String category = ModBosses.MODID;
+    fireballChance = config.getFloat("fireballChance", category, 0.2F, 0, 0.99F, "In third phase, how often to fireballs shoot");
+    arrowPotions = config.getBoolean("arrowPotions", category, true, "In first phase, do the arrows have potion effects");
     renderDebugHitboxes = config.getBoolean("debugHitboxes", category, false, "Show hitboxes for testing");
     canDespawn = config.getBoolean("canDespawnNaturally", category, false, "Natural Despawning");
     EntityPlayerBoss.bossName = config.getString("name",
@@ -38,6 +42,8 @@ public class ConfigManager {
         category, "minecraft:iron_sword", "Main hand holding");
     EntityPlayerBoss.offHand = config.getString("OffHand",
         category, "minecraft:shield", "Off hand holding");
+    healthSwitchFire = config.getFloat("thirdPhaseHealth", category, 0.15F, 0, 0.99F, "Initial phase 1 is always bow.  At which percentage of health should it switch to third phase of ghast fireballs");
+    healthMelee = config.getFloat("secondPhaseHealth", category, 0.6F, 0, 0.99F, "Initial phase 1 is always bow.  At which percentage of health should it switch to second phase of melee attacks");
     if (config.hasChanged()) {
       config.save();
     }
