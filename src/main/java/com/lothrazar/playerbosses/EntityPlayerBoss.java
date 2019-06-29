@@ -7,7 +7,7 @@ import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAttackMelee;
-import net.minecraft.entity.ai.EntityAIHurtByTarget;
+import net.minecraft.entity.ai.EntityAIAttackRangedBow;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIMoveThroughVillage;
 import net.minecraft.entity.ai.EntityAIMoveTowardsRestriction;
@@ -17,12 +17,18 @@ import net.minecraft.entity.ai.EntityAIWanderAvoidWater;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
 import net.minecraft.entity.monster.EntityGiantZombie;
 import net.minecraft.entity.monster.EntityPigZombie;
+import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Items;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.datasync.DataParameter;
+import net.minecraft.network.datasync.DataSerializers;
+import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundEvent;
@@ -34,6 +40,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.client.registry.IRenderFactory;
 
 public class EntityPlayerBoss extends EntityGiantZombie {
+
+  private static final DataParameter<Boolean> ATTACKINGFIRE = EntityDataManager.<Boolean> createKey(EntityGiantZombie.class, DataSerializers.BOOLEAN);
 
   public static double armor;
   public static double health;
@@ -48,15 +56,26 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   public static SoundEvent SOUND_AMB;
   public static SoundEvent SOUND_DEATH;
   private final BossInfoServer bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
+  private EnumAttackType attackType;
+
+  private static enum EnumAttackType {
+    MELEE, RANGED, FIRE;
+  }
 
   public EntityPlayerBoss(World worldIn) {
     super(worldIn);
-
-    // bossInfo = (BossInfoServer) (new BossInfoServer(this.getDisplayName(), BossInfo.Color.GREEN, BossInfo.Overlay.PROGRESS)).setDarkenSky(true);
-    net.minecraft.entity.boss.EntityWither x;
     this.isImmuneToFire = immuneFire;
-    this.experienceValue = expDropped;// config
-    //    ((PathNavigateGround)this.getNavigator()).setCanSwim(true);
+    this.experienceValue = expDropped;// config 
+  }
+
+  @Override
+  protected void entityInit() {
+    super.entityInit();
+    this.dataManager.register(ATTACKINGFIRE, Boolean.valueOf(false));
+  }
+
+  public void setAttacking(boolean attacking) {
+    this.dataManager.set(ATTACKINGFIRE, Boolean.valueOf(attacking));
   }
 
   @Override
@@ -90,7 +109,11 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   @Override
   public void updateAITasks() {
     super.updateAITasks();
-    this.bossInfo.setPercent(this.getHealth() / this.getMaxHealth());
+    this.bossInfo.setPercent(getHealthPercent());
+  }
+
+  private float getHealthPercent() {
+    return this.getHealth() / this.getMaxHealth();
   }
 
   /////////////// data properties // some from config 
@@ -120,10 +143,25 @@ public class EntityPlayerBoss extends EntityGiantZombie {
     this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(speed);
     this.getEntityAttribute(SharedMonsterAttributes.ATTACK_DAMAGE).setBaseValue(damage);
     this.getEntityAttribute(SharedMonsterAttributes.ARMOR).setBaseValue(armor);
-    //  this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(0.20D);
   }
 
   ///////////// AI
+  private EntityAINearestAttackableTarget melee;
+  private AIFireballAttackGeneric fireball;
+
+  public AIFireballAttackGeneric getAiFire() {
+    if (fireball == null) {
+      fireball = new AIFireballAttackGeneric(this);
+    }
+    return fireball;
+  }
+  public EntityAINearestAttackableTarget getAiMelee() {
+    if (melee == null) {
+      //      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
+      melee = new EntityAINearestAttackableTarget(this, EntityPigZombie.class, true);
+    }
+    return melee;
+  }
   @Override
   protected void initEntityAI() {
     super.initEntityAI();
@@ -133,13 +171,10 @@ public class EntityPlayerBoss extends EntityGiantZombie {
     this.tasks.addTask(7, new EntityAIWanderAvoidWater(this, 1.0D));
     this.tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
     this.tasks.addTask(8, new EntityAILookIdle(this));
-    this.applyEntityAI();
-  }
-
-  protected void applyEntityAI() {
     this.tasks.addTask(6, new EntityAIMoveThroughVillage(this, 1.0D, false));
-    this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, new Class[] { EntityPigZombie.class }));
-    this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
+
+    this.attackType = EnumAttackType.MELEE;
+    this.setCombatTask();
   }
 
   ///////////////// sounds 
@@ -163,6 +198,59 @@ public class EntityPlayerBoss extends EntityGiantZombie {
   }
 
   @Override
+  public void writeEntityToNBT(NBTTagCompound root) {
+    super.writeEntityToNBT(root);
+    root.setInteger("attackType", this.attackType.ordinal());
+  }
+
+  @Override
+  public void readEntityFromNBT(NBTTagCompound root) {
+    super.readEntityFromNBT(root);
+    int at = root.getInteger("attackType");
+    this.attackType = EnumAttackType.values()[at];
+  }
+  @Override
+  public void onLivingUpdate() {
+    super.onLivingUpdate();
+    if (getHealthPercent() < 0.53F) {
+      this.attackType = EnumAttackType.FIRE;
+    }
+    else if (getHealthPercent() < 0.66) {
+      this.attackType = EnumAttackType.RANGED;
+    }
+    else {
+      this.attackType = EnumAttackType.MELEE;
+    }
+    //else stay
+    setCombatTask();
+  }
+
+  public void setCombatTask() {
+    tasks.removeTask(getAiMelee());
+    tasks.removeTask(getAiFire());
+    EntitySkeleton x;
+    EntityAIAttackRangedBow y;
+    this.targetTasks.addTask(2, getAiMelee());
+    switch (this.attackType) {
+      case FIRE:
+        tasks.addTask(4, getAiFire());
+        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+      break;
+      case MELEE:
+        tasks.addTask(4, getAiMelee());
+      break;
+      case RANGED:
+        this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+        this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Items.ARROW));
+        tasks.addTask(4, getAiMelee());
+      break;
+      default:
+      break;
+    }
+  }
+
+  @Override
   protected void playStepSound(BlockPos pos, Block blockIn) {
     this.playSound(this.getStepSound(), 0.15F, 1.0F);
   }
@@ -174,5 +262,9 @@ public class EntityPlayerBoss extends EntityGiantZombie {
     public Render<? super EntityPlayerBoss> createRenderFor(RenderManager manager) {
       return new RenderPlayerBoss(manager);
     }
+  }
+
+  public int getFireballStrength() {
+    return 1;
   }
 }

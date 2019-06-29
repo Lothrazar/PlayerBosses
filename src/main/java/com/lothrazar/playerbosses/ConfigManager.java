@@ -13,6 +13,8 @@ public class ConfigManager {
 
   public static boolean canDespawn;
 
+  public static double fireballChance = 0.2;
+
   private static void load() {
     // CHAT SENDING  
     // on  certain damage levels. make sure only once. 
