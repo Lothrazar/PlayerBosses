@@ -15,6 +15,10 @@ public class ConfigManager {
 
   public static double fireballChance = 0.2;
 
+  public static double healthSwitchFire = 0.1;
+
+  public static double healthMelee = 0.4;
+
   private static void load() {
     // CHAT SENDING  
     // on  certain damage levels. make sure only once. 
