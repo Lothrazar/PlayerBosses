@@ -23,7 +23,8 @@ compileJava {
 minecraft {
     version = "1.12.2-14.23.5.2768"
     runDir = "run"
-    
+   	makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+	
     // the mappings can be changed at any time, and must be in the following format.
     // snapshot_YYYYMMDD   snapshot are built nightly.
     // stable_#            stables are built at the discretion of the MCP team.
@@ -32,6 +33,7 @@ minecraft {
     mappings = "snapshot_20171003"
   
     replace '@FINGERPRINT@', project.findProperty('signSHA1')
+	replaceIn "ModBosses.java"
 }
 task signJar(type: SignJar, dependsOn: reobfJar) {
 

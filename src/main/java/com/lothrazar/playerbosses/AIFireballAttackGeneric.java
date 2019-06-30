@@ -47,10 +47,8 @@ public class AIFireballAttackGeneric extends EntityAIBase {
   @Override
   public void updateTask() {
     EntityLivingBase attackTarget = this.parentEntity.getAttackTarget();
-
     if (attackTarget.getDistanceSq(this.parentEntity) < 4096.0D && this.parentEntity.canEntityBeSeen(attackTarget)) {
       World world = this.parentEntity.world;
-
       if (world.rand.nextDouble() < ConfigManager.fireballChance) {
         final double offset = 4.0D;
         final Vec3d vec3d = this.parentEntity.getLook(1.0F);
@@ -66,7 +64,6 @@ public class AIFireballAttackGeneric extends EntityAIBase {
         this.attackTimer = -40;
       }
     }
-
     this.parentEntity.setAttacking(this.attackTimer > 10);
   }
 }

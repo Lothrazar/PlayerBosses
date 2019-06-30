@@ -240,19 +240,16 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   }
 
   public void setCombatTask() {
-
     switch (this.attackType) {
       case RANGED:
         setRangedWeapons();
-
         tasks.addTask(4, this.getAiBow());
       break;
       case MELEE:
         tasks.removeTask(getAiBow());
         // if (this.melee == null) {
-
-          setMeleeWeapons();
-          tasks.addTask(4, this.getAiMelee());
+        setMeleeWeapons();
+        tasks.addTask(4, this.getAiMelee());
       //}
       break;
       case FIRE:
@@ -304,7 +301,6 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
       return new RenderPlayerBoss(manager);
     }
   }
-
 
   @Override
   public void attackEntityWithRangedAttack(EntityLivingBase target, float distanceFactor) {
