@@ -8,8 +8,8 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IEntityLivingData;
 import net.minecraft.entity.IRangedAttackMob;
 import net.minecraft.entity.SharedMonsterAttributes;
+import net.minecraft.entity.ai.EntityAIAttackMelee;
 import net.minecraft.entity.ai.EntityAIAttackRangedBow;
-import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
@@ -147,10 +147,10 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   }
 
   ///////////// AI
-  private EntityAINearestAttackableTarget melee;
+  private EntityAIAttackMelee melee;
   private AIFireballAttackGeneric fireball;
   private EntityAIAttackRangedBow bow;
-  private EntityAIAvoidEntity runaway;
+  // private EntityAIAvoidEntity runaway;
 
   public AIFireballAttackGeneric getAiFire() {
     if (fireball == null) {
@@ -159,10 +159,9 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     return fireball;
   }
 
-  public EntityAINearestAttackableTarget getAiMelee() {
+  public EntityAIAttackMelee getAiMelee() {
     if (melee == null) {
-      //      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
-      melee = new EntityAINearestAttackableTarget(this, EntityPlayer.class, true);
+      melee = new EntityAIAttackMelee(this, 1.0D, false);
     }
     return melee;
   }
@@ -179,11 +178,12 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     super.initEntityAI();
     this.tasks.addTask(0, new EntityAISwimming(this));
     // 
-    this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, new Class[] {}));
     //  this.tasks.addTask(5, new EntityAIMoveTowardsRestriction(this, 1.0D));
     this.tasks.addTask(7, new EntityAIWanderAvoidWater(this, 1.0D));
     this.tasks.addTask(8, new EntityAIWatchClosest(this, EntityPlayer.class, 8.0F));
     this.tasks.addTask(8, new EntityAILookIdle(this));
+    this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true, new Class[] {}));
+    this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
     //   this.tasks.addTask(6, new EntityAIMoveThroughVillage(this, 1.0D, false));
     this.attackType = EnumAttackType.RANGED;
     this.setCombatTask();
@@ -239,23 +239,20 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   }
 
   public void setCombatTask() {
+
     switch (this.attackType) {
       case RANGED:
         setRangedWeapons();
-        //        if (runaway == null) {
-        //          System.out.println("ADD RUNAWAY ");
-        //          runaway = new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D);
-        //          this.tasks.addTask(3, runaway);
-        //        }
+
         tasks.addTask(4, this.getAiBow());
       break;
       case MELEE:
         tasks.removeTask(getAiBow());
-        if (this.melee == null) {
+        // if (this.melee == null) {
+        //          System.out.println("ADD MELEE ");
           setMeleeWeapons();
           tasks.addTask(4, this.getAiMelee());
-          this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityPlayer.class, true));
-        }
+      //}
       break;
       case FIRE:
         tasks.removeTask(getAiMelee());
