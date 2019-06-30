@@ -10,6 +10,7 @@ import net.minecraft.entity.IRangedAttackMob;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAIAttackMelee;
 import net.minecraft.entity.ai.EntityAIAttackRangedBow;
+import net.minecraft.entity.ai.EntityAIAvoidEntity;
 import net.minecraft.entity.ai.EntityAIHurtByTarget;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAINearestAttackableTarget;
@@ -150,7 +151,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   private EntityAIAttackMelee melee;
   private AIFireballAttackGeneric fireball;
   private EntityAIAttackRangedBow bow;
-  // private EntityAIAvoidEntity runaway;
+  private EntityAIAvoidEntity runaway;
 
   public AIFireballAttackGeneric getAiFire() {
     if (fireball == null) {
@@ -225,10 +226,10 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
   @Override
   public void onLivingUpdate() {
     super.onLivingUpdate();
-    if (getHealthPercent() < ConfigManager.healthSwitchFire && ConfigManager.healthSwitchFire > 0) {
+    if (getHealthPercent() < ConfigManager.thirdPhaseHealth && ConfigManager.thirdPhaseHealth > 0) {
       this.attackType = EnumAttackType.FIRE;
     }
-    else if (getHealthPercent() < ConfigManager.healthMelee && ConfigManager.healthMelee > 0) {
+    else if (getHealthPercent() < ConfigManager.secondPhaseHealth && ConfigManager.secondPhaseHealth > 0) {
       this.attackType = EnumAttackType.MELEE;
     }
     else {//from 100% down
@@ -249,7 +250,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
       case MELEE:
         tasks.removeTask(getAiBow());
         // if (this.melee == null) {
-        //          System.out.println("ADD MELEE ");
+
           setMeleeWeapons();
           tasks.addTask(4, this.getAiMelee());
       //}
@@ -258,11 +259,11 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
         tasks.removeTask(getAiMelee());
         this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
         this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
-        //        if (runaway == null) { 
-        //          System.out.println("ADD RUNAWAY ");
-        //          runaway = new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D);
-        //          this.tasks.addTask(3, runaway);
-        //        }
+        if (ConfigManager.thirdPhaseRunaway && runaway == null) {
+          System.out.println("ADD RUNAWAY ");
+          runaway = new EntityAIAvoidEntity(this, EntityPlayer.class, 4.0F, 0.6D, 0.8D);
+          this.tasks.addTask(3, runaway);
+        }
         tasks.addTask(4, this.getAiFire());
       break;
       default:
@@ -272,7 +273,7 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   private void setRangedWeapons() {
     this.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, ItemStack.EMPTY);
+    this.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Items.ARROW));
   }
 
   private void setMeleeWeapons() {
@@ -304,9 +305,6 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     }
   }
 
-  public int getFireballStrength() {
-    return 1;
-  }
 
   @Override
   public void attackEntityWithRangedAttack(EntityLivingBase target, float distanceFactor) {
@@ -315,14 +313,16 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
     double d1 = target.getEntityBoundingBox().minY + target.height / 3.0F - entityarrow.posY;
     double d2 = target.posZ - this.posZ;
     double d3 = MathHelper.sqrt(d0 * d0 + d2 * d2);
-    entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, 14 - this.world.getDifficulty().getDifficultyId() * 4);
+    float velocity = 1.6F;
+    int inaccuracy = 14 - this.world.getDifficulty().getDifficultyId() * 4;
+    entityarrow.shoot(d0, d1 + d3 * 0.20000000298023224D, d2, velocity, inaccuracy);
     this.playSound(SoundEvents.ENTITY_SKELETON_SHOOT, 1.0F, 1.0F / (this.getRNG().nextFloat() * 0.4F + 0.8F));
     this.world.spawnEntity(entityarrow);
   }
 
-  private EntityArrow getArrow(float p) {
+  private EntityArrow getArrow(float distanceFactor) {
     EntityTippedArrow entitytippedarrow = new EntityTippedArrow(this.world, this);
-    entitytippedarrow.setEnchantmentEffectsFromEntity(this, p);
+    entitytippedarrow.setEnchantmentEffectsFromEntity(this, distanceFactor);
     if (ConfigManager.arrowPotions) {
       entitytippedarrow.addEffect(new PotionEffect(MobEffects.POISON, 60, 1));
       entitytippedarrow.addEffect(new PotionEffect(MobEffects.UNLUCK, 60, 1));
@@ -338,8 +338,9 @@ public class EntityPlayerBoss extends EntityGiantZombie implements IRangedAttack
 
   @Override
   public int getItemInUseMaxCount() {
-    if (this.world.rand.nextDouble() < 0.2F)
+    if (this.world.rand.nextDouble() < ConfigManager.arrowChance) {
       return 20;//20 or more if shoot
+    }
     return 0;
   }
 }
